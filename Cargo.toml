@@ -1,0 +1,16 @@
+[package]
+name = "algorithmik4"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+rayon = "1.10.0"
+
+[[bin]]
+name = "problem1"
+path = "src/bin/problem1.rs"
+
+
+[[bin]]
+name = "main"
+path = "src/bin/main.rs"
