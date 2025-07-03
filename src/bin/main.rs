@@ -1,7 +1,21 @@
 use algorithmik4::SuffixArray;
 
 fn main() {
-    let input = b"GATAGACA";
+    // let input = b"GATAGACA";
+    // let searches = vec![
+    //     "GATAGACA", "GATAGAC", "TAGACA", "\0", // End marker
+    //     // not found
+    //     "GATAGACX", "TAGACAGX",
+    // ];
+
+    let s = "Hello Ö World!";
+    let input = s.as_bytes();
+    let searches = vec![
+        "Hell", "o Ö", "!", "\0", // End marker
+        // not found
+        "Hellow", "Woearld",
+    ];
+
     let mut input: Vec<u8> = input.to_vec();
 
     input.push(0); // Append end marker
@@ -9,12 +23,6 @@ fn main() {
     let sa = SuffixArray::new(&input);
 
     dbg!(&sa.sa);
-
-    let searches = vec![
-        "GATAGACA", "GATAGAC", "TAGACA", "\0", // End marker
-        // not found
-        "GATAGACX", "TAGACAGX",
-    ];
 
     for search in searches {
         let timestamp = std::time::Instant::now();

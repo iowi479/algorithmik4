@@ -26,6 +26,18 @@ fn main() {
 
     let sa = SuffixArray::new(&input);
 
+    println!("Suffix Array:");
+    for (i, &index) in sa.sa.iter().enumerate() {
+        let end = if index + 20 < sa.input.len() {
+            index + 20
+        } else {
+            sa.input.len()
+        };
+
+        let suffix = String::from_utf8_lossy(&sa.input[index..end]);
+        println!("{}: {}", i, suffix);
+    }
+
     let searches = vec![
         "wechselwirken",
         "und",
@@ -39,12 +51,14 @@ fn main() {
         "auf",
     ];
 
+    println!("{}", String::from_utf8_lossy(&sa.input));
+
     for search in searches {
         let timestamp = std::time::Instant::now();
         let result = sa.search(search);
         let elapsed = timestamp.elapsed().as_micros();
         if let Some(res) = result {
-            let s = String::from_utf8_lossy(&sa.input[res..]);
+            let s = String::from_utf8_lossy(&sa.input[res..res + 50]);
             println!("{}us\tSearch {} -> \"{}\"", elapsed, search, s);
         } else {
             println!("{}us\tSearch {} -> Not found", elapsed, search);

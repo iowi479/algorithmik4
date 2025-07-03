@@ -32,8 +32,10 @@ impl<'a> SuffixArray<'a> {
             temp_ra.push(0);
         }
 
-        let elapsed = timestamp.elapsed().as_secs();
-        println!("Initial setup done. Time: {}s", elapsed);
+        self.sa.sort();
+
+        let elapsed = timestamp.elapsed().as_millis();
+        println!("Initial setup done. Time: {}ms", elapsed);
 
         while k < self.input.len() {
             timestamp = std::time::Instant::now();
@@ -47,23 +49,31 @@ impl<'a> SuffixArray<'a> {
                 other => other,
             });
 
-            let elapsed = timestamp.elapsed().as_secs();
-            println!("Sorting done. Time: {}s", elapsed);
+            let elapsed = timestamp.elapsed().as_millis();
+            println!("Sorting done. Time: {}ms", elapsed);
 
-            temp_ra[self.sa[0]] = 0;
+            let mut counter = 0;
+            temp_ra[self.sa[0]] = counter;
 
             for i in 1..self.input.len() {
-                temp_ra[self.sa[i]] =
-                    temp_ra[self.sa[i - 1]] + (ra[self.sa[i]] > ra[self.sa[i - 1]]) as usize;
+                if ra[self.sa[i]] != ra[self.sa[i - 1]] {
+                    counter += 1;
+                } else {
+                    if ra[self.sa[i] + k] != ra[self.sa[i - 1] + k] {
+                        counter += 1;
+                    }
+                }
+
+                temp_ra[self.sa[i]] = counter;
             }
 
-            let elapsed = timestamp.elapsed().as_secs() - elapsed;
-            println!("Temp ranks calculated. Time: {}s", elapsed);
+            let elapsed = timestamp.elapsed().as_millis() - elapsed;
+            println!("Temp ranks calculated. Time: {}ms", elapsed);
 
             std::mem::swap(&mut ra, &mut temp_ra);
 
-            let elapsed = timestamp.elapsed().as_secs();
-            println!("Step completed. Time: {}s", elapsed);
+            let elapsed = timestamp.elapsed().as_millis();
+            println!("Step completed. Time: {}ms", elapsed);
             if ra[*self.sa.last().unwrap()] == self.input.len() - 1 {
                 println!("All suffixes have unique ranks, stopping.");
                 break;
@@ -89,6 +99,8 @@ impl<'a> SuffixArray<'a> {
                     return std::cmp::Ordering::Less;
                 }
             }
+
+            println!("Pattern '{}' found at index {}", pattern, i);
             std::cmp::Ordering::Equal
         }) {
             Ok(index) => Some(self.sa[index]),
