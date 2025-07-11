@@ -17,22 +17,15 @@ impl<'a> SuffixArray<'a> {
     fn build(&mut self) {
         let mut timestamp = std::time::Instant::now();
 
-        println!(
-            "Building suffix array for input of length {}.",
-            self.input.len()
-        );
+        self.sa.extend(0..self.input.len());
 
         let mut k = 1;
-        let mut ra = Vec::with_capacity(self.input.len());
-        let mut temp_ra = Vec::with_capacity(self.input.len());
-
-        for (i, c) in self.input.iter().enumerate() {
-            self.sa.push(i);
-            ra.push(*c as usize);
-            temp_ra.push(0);
-        }
-
-        self.sa.sort();
+        let mut ra = self
+            .input
+            .iter()
+            .map(|&c| c as usize)
+            .collect::<Vec<usize>>();
+        let mut temp_ra = vec![0; self.input.len()];
 
         let elapsed = timestamp.elapsed().as_millis();
         println!("Initial setup done. Time: {}ms", elapsed);
@@ -107,4 +100,112 @@ impl<'a> SuffixArray<'a> {
             Err(_) => None,
         }
     }
+}
+
+pub struct NaiveSuffixArray<'a> {
+    pub input: &'a [u8],
+    pub sa: Vec<usize>,
+}
+
+impl<'a> NaiveSuffixArray<'a> {
+    pub fn new(input: &'a [u8]) -> Self {
+        let mut sa = Vec::with_capacity(input.len());
+        for i in 0..input.len() {
+            sa.push(i);
+        }
+
+        sa.par_sort_unstable_by(|&a, &b| {
+            let suffix_a = &input[a..];
+            let suffix_b = &input[b..];
+            suffix_a.cmp(suffix_b)
+        });
+
+        NaiveSuffixArray { input, sa }
+    }
+
+    pub fn search(&self, pattern: &[u8]) -> Vec<(usize, &str)> {
+        let index = self.sa.binary_search_by(|i| {
+            let suffix = &self.input[*i..];
+            compare_suffix(pattern, suffix)
+        });
+
+        if let Err(_) = index {
+            return Vec::new();
+        }
+
+        let mut results = Vec::new();
+        let mut start_index = match index {
+            Ok(idx) => idx,
+            Err(_) => unreachable!(),
+        };
+        let mut end_index = start_index;
+
+        loop {
+            if start_index > 0 {
+                let previous_index = start_index - 1;
+                match compare_suffix(pattern, &self.input[self.sa[previous_index]..]) {
+                    std::cmp::Ordering::Equal => {
+                        start_index = previous_index;
+                        continue;
+                    }
+                    _ => {
+                        break;
+                    }
+                }
+            }
+
+            break;
+        }
+
+        loop {
+            if end_index < self.sa.len() - 1 {
+                let next_index = end_index + 1;
+                match compare_suffix(pattern, &self.input[self.sa[next_index]..]) {
+                    std::cmp::Ordering::Equal => {
+                        end_index = next_index;
+                        continue;
+                    }
+                    _ => {
+                        break;
+                    }
+                }
+            }
+
+            break;
+        }
+
+        for i in start_index..=end_index {
+            let start = self.sa[i];
+            let mut end = usize::min(self.sa[i] + 100, self.input.len());
+            let mut suffix = &self.input[start..end];
+            let result = loop {
+                if let Ok(valid_str) = std::str::from_utf8(suffix) {
+                    break valid_str;
+                } else {
+                    end += 1;
+                    suffix = &self.input[start..end];
+                }
+            };
+            results.push((start, result));
+        }
+
+        results
+    }
+}
+
+fn compare_suffix(pattern: &[u8], suffix: &[u8]) -> std::cmp::Ordering {
+    for (i, pc) in pattern.iter().enumerate() {
+        let sc = suffix.iter().nth(i);
+        if sc.is_none() {
+            return std::cmp::Ordering::Less;
+        }
+        let sc = sc.unwrap();
+        if *pc < *sc {
+            return std::cmp::Ordering::Greater;
+        } else if *pc > *sc {
+            return std::cmp::Ordering::Less;
+        }
+    }
+
+    std::cmp::Ordering::Equal
 }

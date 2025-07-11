@@ -1,2 +1,7 @@
 /target
+
+perf.data*
+*.svg
+
 dewiki-20220201-clean.txt
+*.txt
