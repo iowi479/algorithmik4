@@ -8,10 +8,12 @@ fn main() {
         return;
     }
     let input_file = &args[1];
-    let article_count: usize = args[2].parse().expect("Invalid article count");
+    let article_count: usize = args[2]
+        .parse()
+        .expect(&format!("Invalid article count: {}", args[2]));
 
     let mut input: Vec<u8> = Vec::new();
-    let file = std::fs::File::open(input_file).expect("Could not open input file");
+    let file = std::fs::File::open(input_file).expect(&format!("Could not open: {}", input_file));
     let mut reader = std::io::BufReader::new(file);
     for _ in 0..article_count {
         while reader
